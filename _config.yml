@@ -1,5 +1,5 @@
 title:            Sphen
-description:      "Mac Related Ramblings"
+description:      "How Do You Like Them Apples?"
 logo:             logo.png
 disqus_shortname: sphen
 share:            true
@@ -29,7 +29,7 @@ owner:
 google_analytics:
 google_verify:
 # https://ssl.bing.com/webmaster/configure/verify/ownership Option 2 content= goes here
-bing_verify:         
+bing_verify:
 
 # Links to include in footer navigation
 # For external links add external: true
