@@ -1,6 +1,6 @@
 title:            Sphen's Blog
 description:      "Ramblings of a Mac Admin"
-logo:             logo3.png
+logo:             logo.png
 disqus_shortname: sphen
 share:            true
 dropcap:			true
@@ -42,7 +42,7 @@ links:
     url: /categories
 
 # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-timezone:    Asia/Dhaka
+timezone:    America/New_York
 future:      true
 highlighter: rouge
 markdown:    kramdown
