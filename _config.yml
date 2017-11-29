@@ -1,5 +1,5 @@
 title:            Stephen Boyle
-description:      "How Do You Like Them Apples?"
+description:      "How You Like Them Apples?"
 logo:             logo.png
 disqus_shortname: sphen
 share:            true
@@ -16,7 +16,7 @@ owner:
   avatar:         sphen.png
   email:          stephen@boylepost.com
   # Use the coder's toolbox at http://coderstoolbox.net/string/#!encoding=xml&action=encode&charset=us_ascii to encode your description into XML string
-  description:    Just a guy who loves great beer
+  description:    Just a guy who loves macs and great beer
   # Social networking links used in footer. Update and remove as you like.
   #twitter:        sphensilhagen
   facebook:       sphensilhagen
@@ -38,8 +38,10 @@ links:
     url: /
     external: false
     icon: home
-  - title: Categories
-    url: /categories
+  #- title: Categories
+  #  url: /categories
+  - title: Tags
+    url: /tags
 
 # http://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 timezone:    America/New_York
