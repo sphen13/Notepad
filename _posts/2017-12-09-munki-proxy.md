@@ -15,6 +15,16 @@ featured: true
 
 So I have just recently discovered [Docker](https://www.docker.com).  I may be the last person in the world to know about it, but after playing around with it a bit and figuring things out, I think its one of the best things right now.  I wanted to take on a small project that I could utilize docker for and [munki-proxy](https://github.com/sphen13/munki-proxy) is what I came up with.
 
+<section id="table-of-contents" class="toc">
+  <header>
+    <h3 >Contents</h3>
+  </header>
+<div id="drawer" markdown="1">
+*  Auto generated table of contents
+{:toc}
+</div>
+</section><!-- /#table-of-contents -->
+
 ## A Little Background
 
 For those of you not familiar with Docker, it is basically a **container-based virtual environment**.  Well - maybe.  At least thats what I think of it.  Better put in someone else's words:
@@ -31,6 +41,8 @@ I was mainly introduced to Docker by way of Graham Gilbert and his [blog](https:
 > - [Crypt-Server](https://github.com/grahamgilbert/Crypt-Server)
 > - [Using Caddy to HTTPS all the things](https://grahamgilbert.com/blog/2017/04/04/using-caddy-to-https-all-the-things/)
 
+---
+
 ## What I Want To Accomplish
 
 So, back to the issue/project at hand...  Triggered by a great talk at the [MacAdmins Conference at Penn State](https://macadmins.psu.edu) by Rick Heil, titled [Advanced Munki Infrastructure: Moving to Cloud Services](https://youtube.com/watch?v=__JXxHvuXd8), I wanted to try to streamline my munki distribution to larger clients.  In his talk, Rick teased about a Hybrid caching structure using a local nginx caching proxy server, but gave no details beyond a rough framework/idea.
@@ -39,6 +51,8 @@ We also currently use Mac-MSP Gruntwork to manage some of our clients software u
 
 I just want a easily deployable server to place onsite which will cache and accelerate the downloads from our primary munki server.  This will reduce the cost of bandwidth and resources on the main server, allow clients to download updates faster, all while being able to do so with something as simple as a NAS.  Ideally if we could get the clients configured easily or even have them **auto-discover** the proxy that would be awesome.
 
+---
+
 ## Components
 
 We depend on a few open source projects to get all this done:
@@ -46,6 +60,8 @@ We depend on a few open source projects to get all this done:
 - [Docker](https://www.docker.com/community-edition)
 - [nginx](http://nginx.org)
 - [avahi-daemon](https://wiki.archlinux.org/index.php/avahi) _\*optional - for mDNS_
+
+---
 
 ## How To Run
 
@@ -85,7 +101,7 @@ Path | Description
 
 So now that we know what we are dealing with, we can give it a shot.  The following command will start up a new container with the provided settings.  In this case we are specifying that our upstream munki server to be proxied is `https://munkiserver.example.com` and our repo is based in the `/munki` directory.  To store the cache files, we are going to use the local directory of `/var/docker/munki-proxy` to mount inside the container at `/cache`.  We are also mapping port 8080 on the host to port 8080 within the container.  `--restart-always` sets the container to auto start with the host.
 
-```
+{% highlight shell %}
 docker run -d --name munki-proxy \
 	-e MUNKI_ROOT=/munki \
 	-e UPSTREAM_SERVER=https://munkiserver.example.com \
@@ -93,13 +109,13 @@ docker run -d --name munki-proxy \
 	-p 8080:8080 \
 	--restart always \
 	sphen/munki-proxy
-```
+{% endhighlight %}
 
 If you wanted to pass any of the other evironment variables in you would add  `-e VARIABLE=xxxx` to the command.  As far as ports open on the host, If you wanted to use port 80 (or any other port) instead, you would change the `-p` argument to `-p 80:80` etc.
 
 Now that you have started the container up, you can http to the host's ip or dns address at the specific port for anything under the munki repo and it will be cached and served!
 
-### mDNS/Bonjour Dicovery
+### mDNS/Bonjour Discovery
 
 For for and experimentation, I wanted to test the idea of advertising the munki-proxy container via mDNS/Bonjour.  This would potentially allow another script to automatically configure any local munki client to point to the proxy when it is available.  I have built a sample munki preflight script to auto-configure the client here:
 
@@ -121,11 +137,11 @@ docker run -d --name munki-proxy \
 	sphen/munki-proxy
 ```
 
-## The Real Meat
+## The Real Meat (NGINX)
 
 The real magic of all this is done with nginx.  I learned a lot about nginx and its configuration through this exercise.  I wanted to highlight some key take-aways by walking through the configuration.
 
-I started by doing a little googling and came across [this config](https://gist.github.com/jamesez/d61ebdde1c3a1b4e102943c21bf26acf).  Seemed like a good place to start - thanks @jamesez.  So the beginning of our config starts with:
+I started by doing a little googling and came across [this config](https://gist.github.com/jamesez/d61ebdde1c3a1b4e102943c21bf26acf).  Seemed like a good place to start - thanks [@jamesez](https://github.com/jamesez).  So the beginning of our config starts with:
 
 ```
 worker_processes 6;
@@ -165,7 +181,7 @@ http {
   gzip on;
 ```
 
-Now i added a log format to include whether we had a cache HIT or MISS.  Might as well see how efficient we are being.
+Now i added a log format to include whether we had a cache _HIT_ or _MISS_.  Might as well see how efficient we are being.
 
 ```
   # log format definition
@@ -240,7 +256,9 @@ Finally the fun stuff... We define each `location` and set the appropriate cache
     }
 ```
 
-Now onto the **pkgs** directory.  This one is fun.  I did a bunch of testing and found out in my testing that the _slice module_ will give us the best caching results for large files.  Without using slice, if you have a very large pkg in the repo which is not cached and you have multiple users trying to pull that at the same time, the request is actually passed upstream after a timeout waiting for the cache to fill.  This will cause unnecessary bandwidth usage.  The solution here is to treat this directory as a byte-range cache.  When nginx requests the file upstream it will do so in several requests.  In our default setup here we are slicing each pkg into 2 MB chunks.  We also need to do some modification of headers and the cache key to get this to work.  The great thing about this is, say that you have a user pulling down a macOS install pkg.  The client requests the file of the proxy normally, nginx requests the file in 2 megabyte chunks and starts filling the cache.  As the cache fills it sends the data back to the client.  If another client requests the same file a few minutes later, nginx will immediately at LAN speed fulfill the cached values so far and then continue to wait for each 2 meg slice which it then sends down to the client.  Super efficient and super cool :)
+Now onto the **pkgs** directory.  This one is fun.  I did a bunch of testing and found out in my testing that the _slice module_ will give us the best caching results for large files.  Without using slice, if you have a very large pkg in the repo which is not cached and you have multiple users trying to pull that at the same time, the request is actually passed upstream after a timeout waiting for the cache to fill.  This will cause unnecessary bandwidth usage.  The solution here is to treat this directory as a byte-range cache.  When nginx requests the file upstream it will do so in several requests.  In our default setup here we are slicing each pkg into 2 MB chunks.  We also need to do some modification of headers and the cache key to get this to work.
+
+The great thing about this is, say that you have a user pulling down a macOS install pkg.  The client requests the file of the proxy normally, nginx requests the file in 2 megabyte chunks and starts filling the cache.  As the cache fills it sends the data back to the client.  If another client requests the same file a few minutes later, nginx will immediately at LAN speed fulfill the cached values so far and then continue to wait for each 2 meg slice which it then sends down to the client.  Super efficient and super cool :)
 
 ```
     location /munki/pkgs/ {
