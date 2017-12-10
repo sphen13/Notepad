@@ -73,9 +73,6 @@ Most of this is ripped off of the main README of the project.  Links:
 
 First and foremost we go over the Environment Variables.  This is how we provide settings we want to use within the container.  The only variable that is **required** is **UPSTREAM_SERVER** for obvious reasons.  The assumptions and defaults are listed in the table.
 
-<div class="row">
-    <div class="large-12 columns">
-
 Variable | Default | Example | Description
 --- | --- | --- | ---
 MUNKI_ROOT | | /munki | Path from web root to the repo. Include first slash. Do not end in a slash.
@@ -91,9 +88,6 @@ EXPIRE_OTHER | **10m** | 1h | Amount of time we keep everything else cached for 
 AVAHI_HOST | | munki-proxy | mDNS hostname for proxy host.  Empty by default **(mDNS disabled)**
 AVAHI_DOMAIN | **local** | local | mDNS domain.
 GRUNTWORK | | `bXVua2k6bXVua2k=` | Encoded basic auth header for upstream repo
-
-    </div>
-</div>
 
 ### Mappable Volumes
 
