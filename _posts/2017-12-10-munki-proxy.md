@@ -3,7 +3,7 @@ layout: post
 title: "Munki Proxy - My First Real Docker Project"
 description:
 headline:
-modified: 2017-12-09
+modified: 2017-12-10
 category: software
 tags: [docker, munki, nginx]
 imagefeature: munki-proxy.gif
@@ -17,7 +17,7 @@ So I have just recently discovered [Docker](https://www.docker.com).  I may be t
 
 <section id="table-of-contents" class="toc">
   <header>
-    <h3 >Contents</h3>
+    <h3>Contents</h3>
   </header>
 <div id="drawer" markdown="1">
 *  Auto generated table of contents
@@ -73,6 +73,9 @@ Most of this is ripped off of the main README of the project.  Links:
 
 First and foremost we go over the Environment Variables.  This is how we provide settings we want to use within the container.  The only variable that is **required** is **UPSTREAM_SERVER** for obvious reasons.  The assumptions and defaults are listed in the table.
 
+<div class="row">
+    <div class="large-12 columns">
+
 Variable | Default | Example | Description
 --- | --- | --- | ---
 MUNKI_ROOT | | /munki | Path from web root to the repo. Include first slash. Do not end in a slash.
@@ -89,6 +92,9 @@ AVAHI_HOST | | munki-proxy | mDNS hostname for proxy host.  Empty by default **(
 AVAHI_DOMAIN | **local** | local | mDNS domain.
 GRUNTWORK | | `bXVua2k6bXVua2k=` | Encoded basic auth header for upstream repo
 
+    </div>
+</div>
+
 ### Mappable Volumes
 
 Because Docker images should be treated as immutable - we can map directories from our host system that are on persistent storage to a directory inside the container.  In this case we only have one mappable volume that we care about - and thats the cache.  We definitely want to do this because we want the cache to persist if we restart / update the container!
@@ -98,14 +104,14 @@ Because Docker images should be treated as immutable - we can map directories fr
         <table>
   <thead>
     <tr>
-      <th>`/cache`</th>
-      <th>Local proxy cache</th>
+      <th>Path</th>
+      <th>Description</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>Content Goes Here</td>
-      <td>This is longer content Donec id elit non mi porta gravida at eget metus.</td>
+      <td>/cache</td>
+      <td>Local proxy cache</td>
     </tr>
   </tbody>
 </table>
