@@ -93,15 +93,30 @@ GRUNTWORK | | `bXVua2k6bXVua2k=` | Encoded basic auth header for upstream repo
 
 Because Docker images should be treated as immutable - we can map directories from our host system that are on persistent storage to a directory inside the container.  In this case we only have one mappable volume that we care about - and thats the cache.  We definitely want to do this because we want the cache to persist if we restart / update the container!
 
-Path | Description
---- | ---
-`/cache` | Local proxy cache
+<div class="row">
+    <div class="large-12 columns">
+        <table>
+  <thead>
+    <tr>
+      <th>`/cache`</th>
+      <th>Local proxy cache</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Content Goes Here</td>
+      <td>This is longer content Donec id elit non mi porta gravida at eget metus.</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+</div>
 
 ### Example Container Setup
 
 So now that we know what we are dealing with, we can give it a shot.  The following command will start up a new container with the provided settings.  In this case we are specifying that our upstream munki server to be proxied is `https://munkiserver.example.com` and our repo is based in the `/munki` directory.  To store the cache files, we are going to use the local directory of `/var/docker/munki-proxy` to mount inside the container at `/cache`.  We are also mapping port 8080 on the host to port 8080 within the container.  `--restart-always` sets the container to auto start with the host.
 
-{% highlight shell %}
+``` shell
 docker run -d --name munki-proxy \
 	-e MUNKI_ROOT=/munki \
 	-e UPSTREAM_SERVER=https://munkiserver.example.com \
@@ -109,7 +124,7 @@ docker run -d --name munki-proxy \
 	-p 8080:8080 \
 	--restart always \
 	sphen/munki-proxy
-{% endhighlight %}
+```
 
 If you wanted to pass any of the other evironment variables in you would add  `-e VARIABLE=xxxx` to the command.  As far as ports open on the host, If you wanted to use port 80 (or any other port) instead, you would change the `-p` argument to `-p 80:80` etc.
 
@@ -124,9 +139,9 @@ For for and experimentation, I wanted to test the idea of advertising the munki-
 Please note there are potential serious security issues with this method currently.  This is just for fun/testing.
 {: .notice}
 
-When starting the container we need to specify the `AVAHI_HOST` variable as well as change the type of networking.  For this we are going to use `--net=host` instead of a single port.  This will allow the mDNS service to advertise properly to the LAN.  In the following example, we will end up with an advertised service named **munki-proxy** providing `_munki._tcp.`.
+When starting the container we need to specify the `AVAHI_HOST` variable as well as change the type of networking.  For this we are going to use `--net=host` instead of a single port.  This will allow the mDNS service to advertise properly to the LAN.  In the following example, we will end up with an advertised service named **munki-proxy** providing `_munki._tcp.`
 
-```
+``` shell
 docker run -d --name munki-proxy \
 	-e MUNKI_ROOT=/munki \
 	-e UPSTREAM_SERVER=https://munkiserver.example.com \
