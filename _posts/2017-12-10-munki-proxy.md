@@ -73,21 +73,100 @@ Most of this is ripped off of the main README of the project.  Links:
 
 First and foremost we go over the Environment Variables.  This is how we provide settings we want to use within the container.  The only variable that is **required** is **UPSTREAM_SERVER** for obvious reasons.  The assumptions and defaults are listed in the table.
 
-Variable | Default | Example | Description
---- | --- | --- | ---
-MUNKI_ROOT | | /munki | Path from web root to the repo. Include first slash. Do not end in a slash.
-SUS_ROOT |  | /reposado | Path from web root to Apple SUS files. Include first slash. Do not end in a slash.
-**UPSTREAM_SERVER** |  | `https://munkiserver.example.com:8080` | Web server to be proxied including protocol. Do not end in slash. Can include port. **REQUIRED**
-SERVER_NAME | | `munkiproxy.example.com` | Set proxy web server name if needed.
-PORT | **8080** | 80 | Port to host repo on.
-MAX_SIZE | **100g** | 50g | Size of munki pkgs cache. _The overall size may get larger than this due to how nginx functions_
-EXPIRE_PKGS | **30d** | 90d | Amount of time we keep the munki **pkgs** directory cached for
-EXPIRE_ICONS | **14d** | 7d | Amount of time we keep the munki **icons** directory cached for
-EXPIRE_SUS | **14d** | 30d | Amount of time we keep the apple sus **downloads** directory cached for
-EXPIRE_OTHER | **10m** | 1h | Amount of time we keep everything else cached for _(catalogs etc)_
-AVAHI_HOST | | munki-proxy | mDNS hostname for proxy host.  Empty by default **(mDNS disabled)**
-AVAHI_DOMAIN | **local** | local | mDNS domain.
-GRUNTWORK | | `bXVua2k6bXVua2k=` | Encoded basic auth header for upstream repo
+<div class="row">
+    <div class="large-12 columns">
+<table>
+  <thead>
+    <tr>
+      <th>Variable</th>
+      <th>Default</th>
+      <th>Example</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>MUNKI_ROOT</td>
+      <td> </td>
+      <td>/munki</td>
+      <td>Path from web root to the repo. Include first slash. Do not end in a slash.</td>
+    </tr>
+    <tr>
+      <td>SUS_ROOT</td>
+      <td> </td>
+      <td>/reposado</td>
+      <td>Path from web root to Apple SUS files. Include first slash. Do not end in a slash.</td>
+    </tr>
+    <tr>
+      <td><strong>UPSTREAM_SERVER</strong></td>
+      <td> </td>
+      <td><code class="highlighter-rouge">https://munkiserver.example.com:8080</code></td>
+      <td>Web server to be proxied including protocol. Do not end in slash. Can include port. <strong>REQUIRED</strong></td>
+    </tr>
+    <tr>
+      <td>SERVER_NAME</td>
+      <td> </td>
+      <td><code class="highlighter-rouge">munkiproxy.example.com</code></td>
+      <td>Set proxy web server name if needed.</td>
+    </tr>
+    <tr>
+      <td>PORT</td>
+      <td><strong>8080</strong></td>
+      <td>80</td>
+      <td>Port to host repo on.</td>
+    </tr>
+    <tr>
+      <td>MAX_SIZE</td>
+      <td><strong>100g</strong></td>
+      <td>50g</td>
+      <td>Size of munki pkgs cache. <em>The overall size may get larger than this due to how nginx functions</em></td>
+    </tr>
+    <tr>
+      <td>EXPIRE_PKGS</td>
+      <td><strong>30d</strong></td>
+      <td>90d</td>
+      <td>Amount of time we keep the munki <strong>pkgs</strong> directory cached for</td>
+    </tr>
+    <tr>
+      <td>EXPIRE_ICONS</td>
+      <td><strong>14d</strong></td>
+      <td>7d</td>
+      <td>Amount of time we keep the munki <strong>icons</strong> directory cached for</td>
+    </tr>
+    <tr>
+      <td>EXPIRE_SUS</td>
+      <td><strong>14d</strong></td>
+      <td>30d</td>
+      <td>Amount of time we keep the apple sus <strong>downloads</strong> directory cached for</td>
+    </tr>
+    <tr>
+      <td>EXPIRE_OTHER</td>
+      <td><strong>10m</strong></td>
+      <td>1h</td>
+      <td>Amount of time we keep everything else cached for <em>(catalogs etc)</em></td>
+    </tr>
+    <tr>
+      <td>AVAHI_HOST</td>
+      <td> </td>
+      <td>munki-proxy</td>
+      <td>mDNS hostname for proxy host.  Empty by default <strong>(mDNS disabled)</strong></td>
+    </tr>
+    <tr>
+      <td>AVAHI_DOMAIN</td>
+      <td><strong>local</strong></td>
+      <td>local</td>
+      <td>mDNS domain.</td>
+    </tr>
+    <tr>
+      <td>GRUNTWORK</td>
+      <td> </td>
+      <td><code class="highlighter-rouge">bXVua2k6bXVua2k=</code></td>
+      <td>Encoded basic auth header for upstream repo</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+</div>
 
 ### Mappable Volumes
 
