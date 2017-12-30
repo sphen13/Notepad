@@ -15,6 +15,9 @@ featured: true
 
 So I have just recently discovered [Docker](https://www.docker.com).  I may be the last person in the world to know about it, but after playing around with it a bit and figuring things out, I think its one of the best things right now.  I wanted to take on a small project that I could utilize docker for and [munki-proxy](https://github.com/sphen13/munki-proxy) is what I came up with.
 
+Updated Dec 30th. Post can be found [here](/software/munki-proxy-update)
+{: .notice}
+
 <section id="table-of-contents" class="toc">
   <header>
     <h3>Contents</h3>
@@ -238,21 +241,23 @@ The real magic of all this is done with nginx.  I learned a lot about nginx and 
 I started by doing a little googling and came across [this config](https://gist.github.com/jamesez/d61ebdde1c3a1b4e102943c21bf26acf).  Seemed like a good place to start - thanks [@jamesez](https://github.com/jamesez).  So the beginning of our config starts with:
 
 ```
-worker_processes 6;
+worker_processes 1;
 
 events {
-  worker_connections 768;
+  worker_connections 1024;
+  use epoll;
+  multi_accept on;
 }
 
 http {
   # optimize for large files
-  sendfile off;
+  sendfile on;
   directio 512;
   aio on;
   tcp_nopush on;
   tcp_nodelay on;
 
-  keepalive_timeout 180;
+  keepalive_timeout 90;
 
   # open file caching
   open_file_cache            max=2000 inactive=5m;
@@ -273,6 +278,8 @@ http {
 
   # Gzip Settings
   gzip on;
+  gzip_min_length 1000;
+  gzip_types text/html application/x-javascript text/css application/javascript text/javascript text/plain text/xml;
 ```
 
 Now i added a log format to include whether we had a cache _HIT_ or _MISS_.  Might as well see how efficient we are being.
@@ -299,9 +306,10 @@ Nginx can have different zones for caching.  Each `proxy_cache_path` zone can sp
 We need to use `proxy_cache_valid` to set what type of HTTP return codes we want to cache and for how long.  We are going to cache return codes 202, 302 and 404 for 10 minutes by default.  `proxy_cache_revalidate` is on.  Seems like a good idea to me - not 100% on its exact behavior - but sounds like if we have a cache item that has expired, nginx can avoid downloading it again by checking if it has been changed.  `proxy_cache_lock` is an attempt at getting nginx to be a bit more efficient upstream.  If there are multiple clients requesting the same file that has not finished being cached, it will wait _(more on this later)_
 
 ```
-  proxy_cache_valid       200 302 404   10m;
-  proxy_cache_revalidate  on;
-  proxy_cache_lock        on;
+  proxy_cache_valid         200 302 404   10m;
+  proxy_cache_revalidate    on;
+  proxy_cache_lock          on;
+  proxy_cache_lock_timeout  5m;
 ```
 
 We want to set headers upstream.  These will inherit to the `server` and `location` unless a higher level also specifies `proxy_set_header`.
@@ -350,16 +358,16 @@ Finally the fun stuff... We define each `location` and set the appropriate cache
     }
 ```
 
-Now onto the **pkgs** directory.  This one is fun.  I did a bunch of testing and found out in my testing that the _slice module_ will give us the best caching results for large files.  Without using slice, if you have a very large pkg in the repo which is not cached and you have multiple users trying to pull that at the same time, the request is actually passed upstream after a timeout waiting for the cache to fill.  This will cause unnecessary bandwidth usage.  The solution here is to treat this directory as a byte-range cache.  When nginx requests the file upstream it will do so in several requests.  In our default setup here we are slicing each pkg into 2 MB chunks.  We also need to do some modification of headers and the cache key to get this to work.
+Now onto the **pkgs** directory.  This one is fun.  I did a bunch of testing and found out in my testing that the _slice module_ will give us the best caching results for large files.  Without using slice, if you have a very large pkg in the repo which is not cached and you have multiple users trying to pull that at the same time, the request is actually passed upstream after a timeout waiting for the cache to fill.  This will cause unnecessary bandwidth usage.  The solution here is to treat this directory as a byte-range cache.  When nginx requests the file upstream it will do so in several requests.  In our default setup here we are slicing each pkg into 16 MB chunks.  We also need to do some modification of headers and the cache key to get this to work.
 
-The great thing about this is, say that you have a user pulling down a macOS install pkg.  The client requests the file of the proxy normally, nginx requests the file in 2 megabyte chunks and starts filling the cache.  As the cache fills it sends the data back to the client.  If another client requests the same file a few minutes later, nginx will immediately at LAN speed fulfill the cached values so far and then continue to wait for each 2 meg slice which it then sends down to the client.  Super efficient and super cool :)
+The great thing about this is, say that you have a user pulling down a macOS install pkg.  The client requests the file of the proxy normally, nginx requests the file in 16 megabyte chunks and starts filling the cache.  As the cache fills it sends the data back to the client.  If another client requests the same file a few minutes later, nginx will immediately at LAN speed fulfill the cached values so far and then continue to wait for each 16 meg slice which it then sends down to the client.  Super efficient and super cool :)
 
 ```
     location /munki/pkgs/ {
       proxy_pass          https://munki.example.com/munki/pkgs/;
       proxy_cache         MUNKI_PKGS;
       proxy_cache_valid   200 206 302   30d;
-      slice               2m;
+      slice               16m;
       proxy_cache_key     $host$uri$is_args$args$slice_range;
 
       proxy_set_header    Range $slice_range;
@@ -406,7 +414,7 @@ Because we can I put in some rewrites and caching ability for apple SUS. This is
       proxy_cache         APPLE_SUS;
       proxy_cache_valid   200 206 302   14d;
 
-      slice               2m;
+      slice               16m;
       proxy_cache_key     $host$uri$is_args$args$slice_range;
       proxy_set_header    Range $slice_range;
       proxy_set_header    Host $host;
